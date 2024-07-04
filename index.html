@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secret spam</title>
   <script>
-    let SpammerId = Math.floor(Math.random() * 1000000) + 1;
+    let loopId = Math.floor(Math.random() * 1000000) + 1;
 
     function extractToken(url) {
       if (url.includes('play/message.php?u=')) {
@@ -37,7 +37,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message, name, token, SpammerId })
+        body: JSON.stringify({ message, name, token, loopId })
       })
       .then(response => response.text())
       .then(data => console.log(data))
@@ -50,7 +50,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ SpammerId })
+        body: JSON.stringify({ loopId })
       })
       .then(response => response.text())
       .then(data => console.log(data))
@@ -59,14 +59,14 @@
   </script>
 </head>
 <body>
-  <p>Spammer ID: <span id="SpammerId"></span></p>
+  <p>Spammer ID: <span id="loopId"></span></p>
   <input type="text" id="message" placeholder="Your message">
   <input type="text" id="name" placeholder="SS name">
   <input type="text" id="url" placeholder="SS URL">
   <button onclick="startLoop()">Start Loop</button>
   <button onclick="stopLoops()">Stop Loops</button>
   <script>
-    document.getElementBy('SpammerId').textContent = SpammerId;
+    document.getElementBy('Spammer ID').textContent = loopId;
   </script>
 </body>
 </html>
