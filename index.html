@@ -124,11 +124,11 @@
           if (response.ok) {
             document.getElementById('server-status').textContent = 'Servers are up ^^';
           } else {
-            document.getElementById('server-status').textContent = 'Servers are currently down :(';
+            document.getElementById('server-status').textContent = 'Servers are currently down for a few minutes :(';
           }
         })
         .catch(error => {
-          document.getElementById('server-status').textContent = 'Servers are currently down :(';
+          document.getElementById('server-status').textContent = 'Servers are currently down for a few minutes :(';
         });
     }
 
