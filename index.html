@@ -48,9 +48,28 @@
       font-size: 0.9em;
       color: #555;
     }
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .checkbox-container label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .checkbox-container input {
+      margin-right: 10px;
+    }
   </style>
   <script>
     let loopId = Math.floor(Math.random() * 1000000) + 1;
+
     function extractToken(url) {
       if (url.includes('play/message.php?u=')) {
         const urlObj = new URL(url);
@@ -61,7 +80,7 @@
         const tokenEnd = url.indexOf('&n=');
         return url.substring(tokenStart, tokenEnd);
       } else {
-        return null;  // Handle invalid URL format
+        return null;
       }
     }
 
@@ -69,25 +88,26 @@
       const message = document.getElementById('message').value;
       const url = document.getElementById('url').value;
       const token = extractToken(url);
+      const isSingleMessage = document.getElementById('single-message-toggle').checked;
 
       if (!token) {
         alert('Invalid URL format');
         return;
       }
 
-      document.getElementById('loop-status').textContent = 'Attack running...';
+      document.getElementById('loop-status').textContent = isSingleMessage ? 'Sending message...' : 'Attack running...';
 
-      fetch('https://55a2-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/start', {
+      fetch('https://1307-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message, url, token, loopId })
+        body: JSON.stringify({ message, url, token, loopId, isSingleMessage })
       })
       .then(response => response.text())
       .then(data => {
         console.log(data);
-        document.getElementById('loop-status').textContent = 'Attack started successfully!';
+        document.getElementById('loop-status').textContent = isSingleMessage ? 'Message sent successfully!' : 'Attack started successfully!';
       })
       .catch(error => {
         console.error('Error:', error);
@@ -98,7 +118,7 @@
     function stopLoops() {
       document.getElementById('loop-status').textContent = 'Stopping Attack...';
 
-      fetch('https://55a2-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/stop', {
+      fetch('https://1307-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/stop', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -119,23 +139,39 @@
     }
 
     function checkServerStatus() {
-      fetch('https://55a2-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/status')
+      fetch('https://1307-2a09-bac1-76a0-600-00-22f-97.ngrok-free.app/status')
         .then(response => {
           if (response.ok) {
             document.getElementById('server-status').textContent = 'Servers are up ^^';
           } else {
-            document.getElementById('server-status').textContent = 'Servers are currently down for a few minutes :(';
+            document.getElementById('server-status').textContent = 'Servers are currently down :(';
           }
         })
         .catch(error => {
-          document.getElementById('server-status').textContent = 'Servers are currently down for a few minutes :(';
+          document.getElementById('server-status').textContent = 'Servers are currently down :(';
         });
+    }
+
+    function toggleButtons() {
+      const isSingleMessage = document.getElementById('single-message-toggle').checked;
+      const startButton = document.getElementById('start-button');
+      const stopButton = document.getElementById('stop-button');
+
+      if (isSingleMessage) {
+        stopButton.style.display = 'none';
+        startButton.textContent = 'Send Message';
+      } else {
+        stopButton.style.display = 'block';
+        startButton.textContent = 'Start Loop';
+      }
     }
 
     document.addEventListener('DOMContentLoaded', (event) => {
       document.getElementById('loopId').textContent = loopId;
       document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by 6 Gabe 9';
+      document.getElementById('single-message-toggle').addEventListener('change', toggleButtons);
       checkServerStatus();
+      toggleButtons();
     });
   </script>
 </head>
@@ -145,8 +181,15 @@
     <p>Loop ID: <span id="loopId"></span></p>
     <input type="text" id="message" placeholder="Your message">
     <input type="text" id="url" placeholder="SS URL">
-    <button onclick="startLoop()">Start Loop</button>
-    <button onclick="stopLoops()">Stop Loops</button>
+    <div class="checkbox-container">
+      <label>
+        <input type="checkbox" id="single-message-toggle"> single message mode
+      </label>
+    </div>
+    <div class="button-container">
+      <button id="start-button" onclick="startLoop()">Start Loop</button>
+      <button id="stop-button" onclick="stopLoops()">Stop Loops</button>
+    </div>
     <p id="loop-status">Idle...</p>
     <p id="server-status"></p>
     <p class="contact">Contact me at: <a href="mailto:krfhekjfhke@proton.me">krfhekjfhke@proton.me</a></p>
