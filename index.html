@@ -25,17 +25,13 @@
       width: 90%;
       max-width: 500px;
     }
-    input, button {
+    input, button, textarea {
       margin: 10px 0;
       padding: 10px;
       width: 100%;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-sizing: border-box;
-    }
-    input {
-      word-wrap: break-word;
-      white-space: normal;
     }
     button {
       background-color: #007BFF;
@@ -62,7 +58,8 @@
   </style>
   <script>
     let loopId = Math.floor(Math.random() * 1000000) + 1;
-    let server = 'https://8004-2a09-bac5-ae63-1923-00-281-8e.ngrok-free.app';
+    let server = 'https://7c44-24-139-35-39.ngrok-free.app';
+
     function extractTokens(urls) {
       return urls.split(',').map(url => {
         url = url.trim();
@@ -80,9 +77,19 @@
       }).filter(token => token !== null);
     }
 
+    function replaceRandomWords(message, randomWords) {
+      let newMessage = message;
+      while (newMessage.includes('{rand}') && randomWords.length > 0) {
+        const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+        newMessage = newMessage.replace('{rand}', randomWord);
+      }
+      return newMessage;
+    }
+
     function startLoop() {
-      const message = document.getElementById('message').value;
+      const originalMessage = document.getElementById('message').value;
       const urls = document.getElementById('url').value;
+      const randomWords = document.getElementById('random-words').value.split(',').map(word => word.trim());
       const tokens = extractTokens(urls);
       const isSingleMessage = document.getElementById('single-message-button').dataset.singleMessage === 'true';
 
@@ -98,7 +105,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message, urls, tokens, loopId, isSingleMessage })
+        body: JSON.stringify({ message: originalMessage, urls, tokens, loopId, isSingleMessage, randomWords })
       })
       .then(response => response.text())
       .then(data => {
@@ -125,12 +132,10 @@
       .then(data => {
         console.log(data);
         document.getElementById('loop-status').textContent = 'Attack stopped successfully!';
-        document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by 6 Gabe 9';
       })
       .catch(error => {
         console.error('Error:', error);
         document.getElementById('loop-status').textContent = 'Error stopping Attack.';
-        document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by 6 Gabe 9';
       });
     }
 
@@ -180,8 +185,9 @@
   <div class="container">
     <h1>Secret Spam</h1>
     <p>Loop ID: <span id="loopId"></span></p>
-    <input type="text" id="message" placeholder="Your message">
+    <input type="text" id="message" placeholder="Your message {rand} for random phrases">
     <textarea id="url" placeholder="SS URLs (separated by commas)"></textarea>
+    <input type="text" id="random-words" placeholder="Random phrases (separated by commas)">
     <div class="button-container">
       <button id="single-message-button" data-single-message="false">Enable Single Message Mode</button>
       <button id="start-button" onclick="startLoop()">Start Loop</button>
