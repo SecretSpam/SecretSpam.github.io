@@ -58,7 +58,7 @@
   </style>
   <script>
     let loopId = Math.floor(Math.random() * 1000000) + 1;
-    let server = 'https://7c44-24-139-35-39.ngrok-free.app';
+    let server = 'https://6b26-24-139-35-39.ngrok-free.app';
 
     function extractTokens(urls) {
       return urls.split(',').map(url => {
@@ -77,12 +77,23 @@
       }).filter(token => token !== null);
     }
 
-    function replaceRandomWords(message, randomWords) {
+    function replacePlaceholders(message, randomWords) {
       let newMessage = message;
+
+      // Replace {rand} placeholders
       while (newMessage.includes('{rand}') && randomWords.length > 0) {
         const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
         newMessage = newMessage.replace('{rand}', randomWord);
       }
+
+      // Replace {1-10} placeholders
+      const rangePattern = /\{(\d+)-(\d+)\}/g;
+      newMessage = newMessage.replace(rangePattern, (match, p1, p2) => {
+        const min = parseInt(p1, 10);
+        const max = parseInt(p2, 10);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      });
+
       return newMessage;
     }
 
@@ -195,7 +206,7 @@
     </div>
     <p id="loop-status">Idle...</p>
     <p id="server-status"></p>
-    <p class="contact">Contact me at: <a href="mailto:krfhekjfhke@proton.me">krfhekjfhke@proton.me</a></p>
+    <p class="contact">Contact me at: <a href="https://discord.gg/KUw3dYG2AR">https://discord.gg/KUw3dYG2AR</a></p>
   </div>
 </body>
 </html>
