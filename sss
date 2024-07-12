@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Spam</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+    }
+    input, button, textarea {
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    p {
+      margin: 10px 0;
+    }
+    .contact {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #555;
+    }
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
+  <script>
+    let loopId = Math.floor(Math.random() * 1000000) + 1;
+    let server = 'https://ddd4-24-139-35-39.ngrok-free.app';
+
+    function extractTokens(urls) {
+      return urls.split(',').map(url => {
+        url = url.trim();
+        if (url.includes('play/message.php?u=')) {
+          const urlObj = new URL(url);
+          const params = new URLSearchParams(urlObj.search);
+          return params.get('u');
+        } else if (url.includes('i.secret-share.net/')) {
+          const tokenStart = url.indexOf('i.secret-share.net/') + 19;
+          const tokenEnd = url.indexOf('&n=');
+          return url.substring(tokenStart, tokenEnd);
+        } else {
+          return null;
+        }
+      }).filter(token => token !== null);
+    }
+
+    function replaceRandomWords(message, randomWords) {
+      let newMessage = message;
+      while (newMessage.includes('{rand}') && randomWords.length > 0) {
+        const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+        newMessage = newMessage.replace('{rand}', randomWord);
+      }
+      return newMessage;
+    }
+
+    function startLoop() {
+      const originalMessage = document.getElementById('message').value;
+      const urls = document.getElementById('url').value;
+      const randomWords = document.getElementById('random-words').value.split(',').map(word => word.trim());
+      const tokens = extractTokens(urls);
+      const isSingleMessage = document.getElementById('single-message-button').dataset.singleMessage === 'true';
+
+      if (tokens.length === 0) {
+        alert('Invalid URL format');
+        return;
+      }
+
+      document.getElementById('loop-status').textContent = isSingleMessage ? 'Sending message...' : 'Attack running...';
+
+      fetch(server +'/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: originalMessage, urls, tokens, loopId, isSingleMessage, randomWords })
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data);
+        document.getElementById('loop-status').textContent = isSingleMessage ? 'Message sent successfully!' : 'Attack started successfully!';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('loop-status').textContent = 'Error starting Attack.';
+      });
+    }
+
+    function stopLoops() {
+      document.getElementById('loop-status').textContent = 'Stopping Attack...';
+
+      fetch(server +'/stop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ loopId })
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data);
+        document.getElementById('loop-status').textContent = 'Attack stopped successfully!';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('loop-status').textContent = 'Error stopping Attack.';
+      });
+    }
+
+    function checkServerStatus() {
+      fetch(server +'/status')
+        .then(response => {
+          if (response.ok) {
+            document.getElementById('server-status').textContent = 'Servers are up ^^';
+          } else {
+            document.getElementById('server-status').textContent = 'Servers are currently down :(';
+          }
+        })
+        .catch(error => {
+          document.getElementById('server-status').textContent = 'Servers are currently down :(';
+        });
+    }
+
+    function toggleSingleMessage() {
+      const button = document.getElementById('single-message-button');
+      const isSingleMessage = button.dataset.singleMessage === 'true';
+      button.dataset.singleMessage = isSingleMessage ? 'false' : 'true';
+      button.textContent = isSingleMessage ? 'Enable Single Message Mode' : 'Disable Single Message Mode';
+
+      const startButton = document.getElementById('start-button');
+      const stopButton = document.getElementById('stop-button');
+
+      if (isSingleMessage) {
+        startButton.style.display = 'block';
+        stopButton.style.display = 'block';
+        startButton.textContent = 'Start Loop';
+      } else {
+        startButton.style.display = 'block';
+        stopButton.style.display = 'none';
+        startButton.textContent = 'Send message';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.getElementById('loopId').textContent = loopId;
+      document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by 46 Gabe 79';
+      document.getElementById('single-message-button').addEventListener('click', toggleSingleMessage);
+      checkServerStatus();
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Secret Spam by 46 Gabe 79</h1>
+    <p>Loop ID: <span id="loopId"></span></p>
+    <input type="text" id="message" placeholder="Your message {rand} for random phrases">
+    <textarea id="url" placeholder="SS URLs (separated by commas)"></textarea>
+    <input type="text" id="random-words" placeholder="Random phrases (separated by commas)">
+    <div class="button-container">
+      <button id="single-message-button" data-single-message="false">Enable Single Message Mode</button>
+      <button id="start-button" onclick="startLoop()">Start Loop</button>
+      <button id="stop-button" onclick="stopLoops()">Stop Loops</button>
+    </div>
+    <p id="loop-status">Idle...</p>
+    <p id="server-status"></p>
+    <p class="contact">Contact me at: <a href="https://discord.gg/KUw3dYG2AR">https://discord.gg/KUw3dYG2AR</a></p>
+  </div>
+</body>
+</html>
