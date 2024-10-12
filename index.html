@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Secret Spam</title>
   <style>
     body {
@@ -38,6 +38,7 @@
       color: white;
       border: none;
       cursor: pointer;
+      font-size: 1em;
     }
     button:hover {
       background-color: #0056b3;
@@ -55,28 +56,46 @@
       flex-direction: column;
       align-items: center;
     }
+    #stop-button {
+      display: none; /* Initially hide the Stop button */
+    }
   </style>
   <script>
-    let loopId = Math.floor(Math.random() * 1000000) + 1;
-    let server = 'https://4b5d-216-82-28-115.ngrok-free.app';
+    const loopId = Math.floor(Math.random() * 1000000) + 1;
+    const server = 'https://caec-2a09-bac1-7680-758-00-48-8f.ngrok-free.app'; // Update to your backend URL
 
+    /**
+     * Extract tokens from the provided URLs.
+     * @param {string} urls - Comma-separated URLs.
+     * @returns {Array<string>} - Array of tokens.
+     */
     function extractTokens(urls) {
       return urls.split(',').map(url => {
         url = url.trim();
-        if (url.includes('play/message.php?u=')) {
+        try {
           const urlObj = new URL(url);
-          const params = new URLSearchParams(urlObj.search);
-          return params.get('u');
-        } else if (url.includes('i.secret-share.net/')) {
-          const tokenStart = url.indexOf('i.secret-share.net/') + 19;
-          const tokenEnd = url.indexOf('&n=');
-          return url.substring(tokenStart, tokenEnd);
-        } else {
+          if (url.includes('play/message.php?u=')) {
+            const params = new URLSearchParams(urlObj.search);
+            return params.get('u');
+          } else if (url.includes('i.secret-share.net/')) {
+            const tokenStart = url.indexOf('i.secret-share.net/') + 'i.secret-share.net/'.length;
+            const tokenEnd = url.indexOf('&n=');
+            return tokenEnd !== -1 ? url.substring(tokenStart, tokenEnd) : null;
+          } else {
+            return null;
+          }
+        } catch (error) {
           return null;
         }
       }).filter(token => token !== null);
     }
 
+    /**
+     * Replace {rand} placeholders with random words.
+     * @param {string} message - The original message with {rand} placeholders.
+     * @param {Array<string>} randomWords - Array of random words.
+     * @returns {string} - The message with placeholders replaced.
+     */
     function replaceRandomWords(message, randomWords) {
       let newMessage = message;
       while (newMessage.includes('{rand}') && randomWords.length > 0) {
@@ -86,21 +105,26 @@
       return newMessage;
     }
 
+    /**
+     * Start the message sending loop or send a single message based on the mode.
+     */
     function startLoop() {
       const originalMessage = document.getElementById('message').value;
       const urls = document.getElementById('url').value;
-      const randomWords = document.getElementById('random-words').value.split(',').map(word => word.trim());
+      const randomWords = document.getElementById('random-words').value.split(',').map(word => word.trim()).filter(word => word !== '');
       const tokens = extractTokens(urls);
       const isSingleMessage = document.getElementById('single-message-button').dataset.singleMessage === 'true';
 
+      console.log('Starting loop. Single Message Mode:', isSingleMessage); // Debugging statement
+
       if (tokens.length === 0) {
-        alert('Invalid URL format');
+        alert('Invalid URL format or no valid tokens found.');
         return;
       }
 
       document.getElementById('loop-status').textContent = isSingleMessage ? 'Sending message...' : 'Attack running...';
 
-      fetch(server +'/start', {
+      fetch(`${server}/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -111,6 +135,11 @@
       .then(data => {
         console.log(data);
         document.getElementById('loop-status').textContent = isSingleMessage ? 'Message sent successfully!' : 'Attack started successfully!';
+        if (!isSingleMessage) {
+          document.getElementById('start-button').style.display = 'none';
+          document.getElementById('stop-button').style.display = 'inline-block'; // Changed to inline-block
+          console.log('Displayed Stop button'); // Debugging statement
+        }
       })
       .catch(error => {
         console.error('Error:', error);
@@ -118,10 +147,13 @@
       });
     }
 
+    /**
+     * Stop the ongoing message sending loop.
+     */
     function stopLoops() {
       document.getElementById('loop-status').textContent = 'Stopping Attack...';
 
-      fetch(server +'/stop', {
+      fetch(`${server}/stop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -132,6 +164,8 @@
       .then(data => {
         console.log(data);
         document.getElementById('loop-status').textContent = 'Attack stopped successfully!';
+        document.getElementById('start-button').style.display = 'block';
+        document.getElementById('stop-button').style.display = 'none';
       })
       .catch(error => {
         console.error('Error:', error);
@@ -139,44 +173,58 @@
       });
     }
 
+    /**
+     * Check the server status by pinging the /status endpoint.
+     */
     function checkServerStatus() {
-      fetch(server +'/status')
+      fetch(`${server}/status`)
         .then(response => {
           if (response.ok) {
-            document.getElementById('server-status').textContent = 'Servers are up ^^';
+            document.getElementById('server-status').textContent = 'Servers are up ✅';
+            document.getElementById('server-status').style.color = 'green';
           } else {
-            document.getElementById('server-status').textContent = 'Servers are currently down :(';
+            document.getElementById('server-status').textContent = 'Servers are currently down ❌';
+            document.getElementById('server-status').style.color = 'red';
           }
         })
         .catch(error => {
-          document.getElementById('server-status').textContent = 'Servers are currently down :(';
+          document.getElementById('server-status').textContent = 'Servers are currently down ❌';
+          document.getElementById('server-status').style.color = 'red';
         });
     }
 
+    /**
+     * Toggle between single message mode and loop mode.
+     */
     function toggleSingleMessage() {
       const button = document.getElementById('single-message-button');
-      const isSingleMessage = button.dataset.singleMessage === 'true';
-      button.dataset.singleMessage = isSingleMessage ? 'false' : 'true';
-      button.textContent = isSingleMessage ? 'Enable Single Message Mode' : 'Disable Single Message Mode';
-
       const startButton = document.getElementById('start-button');
-      const stopButton = document.getElementById('stop-button');
-
-      if (isSingleMessage) {
-        startButton.style.display = 'block';
-        stopButton.style.display = 'block';
-        startButton.textContent = 'Start Loop';
-      } else {
-        startButton.style.display = 'block';
-        stopButton.style.display = 'none';
-        startButton.textContent = 'Send message';
+      const isSingleMessage = button.dataset.singleMessage === 'true';
+      const newIsSingleMessage = !isSingleMessage;
+      button.dataset.singleMessage = newIsSingleMessage ? 'true' : 'false';
+      button.textContent = newIsSingleMessage ? 'Switch to Loop Mode' : 'Switch to Single Message Mode';
+      startButton.textContent = newIsSingleMessage ? 'Send Message' : 'Start Loop';
+      console.log('Toggled Single Message Mode to:', newIsSingleMessage);
+      document.getElementById('loop-status').textContent = 'Idle...';
+      // Reset stop button visibility
+      if (newIsSingleMessage) {
+        document.getElementById('stop-button').style.display = 'none';
+        document.getElementById('start-button').style.display = 'block';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', (event) => {
+    // Initialize event listeners and state on DOM content loaded
+    document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loopId').textContent = loopId;
+      const singleMessageButton = document.getElementById('single-message-button');
+      const isSingleMessage = singleMessageButton.dataset.singleMessage === 'true';
+      const startButton = document.getElementById('start-button');
+      singleMessageButton.textContent = isSingleMessage ? 'Switch to Loop Mode' : 'Switch to Single Message Mode';
+      startButton.textContent = isSingleMessage ? 'Send Message' : 'Start Loop';
       document.getElementById('loop-status').textContent = 'The only, and therefore the best, secret spammer. Made by Ron Tola';
-      document.getElementById('single-message-button').addEventListener('click', toggleSingleMessage);
+      singleMessageButton.addEventListener('click', toggleSingleMessage);
+      document.getElementById('start-button').addEventListener('click', startLoop);
+      document.getElementById('stop-button').addEventListener('click', stopLoops);
       checkServerStatus();
     });
   </script>
@@ -189,13 +237,13 @@
     <textarea id="url" placeholder="SS URLs (separated by commas)"></textarea>
     <input type="text" id="random-words" placeholder="Random phrases (separated by commas)">
     <div class="button-container">
-      <button id="single-message-button" data-single-message="false">Enable Single Message Mode</button>
-      <button id="start-button" onclick="startLoop()">Start Loop</button>
-      <button id="stop-button" onclick="stopLoops()">Stop Loops</button>
+      <button id="single-message-button" data-single-message="false">Switch to Single Message Mode</button>
+      <button id="start-button">Start Loop</button>
+      <button id="stop-button">Stop Loops</button>
     </div>
     <p id="loop-status">Idle...</p>
     <p id="server-status"></p>
-    <p class="contact">Contact me at: <a href="https://discord.gg/KUw3dYG2AR">https://discord.gg/KUw3dYG2AR</a></p>
+    <p class="contact">Contact me at: <a href="https://discord.gg/KUw3dYG2AR" target="_blank">Discord Server</a></p>
   </div>
 </body>
 </html>
