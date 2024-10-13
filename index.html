@@ -133,9 +133,7 @@
       });
     }
 
-    /**
-     * Stop the ongoing message sending loop.
-     */
+
     function stopLoops() {
       document.getElementById('loop-status').textContent = 'Stopping Attack...';
 
@@ -159,9 +157,6 @@
       });
     }
 
-    /**
-     * Check the server status by pinging the /status endpoint.
-     */
     function checkServerStatus() {
       fetch(`${server}/status`)
         .then(response => {
@@ -179,9 +174,6 @@
         });
     }
 
-    /**
-     * Toggle between single message mode and loop mode.
-     */
     function toggleSingleMessage() {
       const button = document.getElementById('single-message-button');
       const startButton = document.getElementById('start-button');
@@ -192,14 +184,11 @@
       startButton.textContent = newIsSingleMessage ? 'Send Message' : 'Start Loop';
       console.log('Toggled Single Message Mode to:', newIsSingleMessage);
       document.getElementById('loop-status').textContent = 'Idle...';
-      // Reset stop button visibility
       if (newIsSingleMessage) {
         document.getElementById('stop-button').style.display = 'none';
         document.getElementById('start-button').style.display = 'block';
       }
     }
-
-    // Initialize event listeners and state on DOM content loaded
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loopId').textContent = loopId;
       const singleMessageButton = document.getElementById('single-message-button');
