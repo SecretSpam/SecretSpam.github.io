@@ -57,18 +57,12 @@
       align-items: center;
     }
     #stop-button {
-      display: none; /* Initially hide the Stop button */
+      display: none;
     }
   </style>
   <script>
     const loopId = Math.floor(Math.random() * 1000000) + 1;
-    const server = 'https://f2c0-2a09-bac5-7b3c-2d2-00-48-a6.ngrok-free.app'; // Update to your backend URL
-
-    /**
-     * Extract tokens from the provided URLs.
-     * @param {string} urls - Comma-separated URLs.
-     * @returns {Array<string>} - Array of tokens.
-     */
+    const server = 'https://522d-2a09-bac1-76e0-758-00-48-a6.ngrok-free.app'; 
     function extractTokens(urls) {
       return urls.split(',').map(url => {
         url = url.trim();
@@ -90,12 +84,7 @@
       }).filter(token => token !== null);
     }
 
-    /**
-     * Replace {rand} placeholders with random words.
-     * @param {string} message - The original message with {rand} placeholders.
-     * @param {Array<string>} randomWords - Array of random words.
-     * @returns {string} - The message with placeholders replaced.
-     */
+
     function replaceRandomWords(message, randomWords) {
       let newMessage = message;
       while (newMessage.includes('{rand}') && randomWords.length > 0) {
@@ -105,9 +94,6 @@
       return newMessage;
     }
 
-    /**
-     * Start the message sending loop or send a single message based on the mode.
-     */
     function startLoop() {
       const originalMessage = document.getElementById('message').value;
       const urls = document.getElementById('url').value;
